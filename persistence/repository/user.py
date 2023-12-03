@@ -7,7 +7,7 @@ class UserRepository:
     def find_all():
         query = '''
                 SELECT "id", "username", "password", "role"
-                FROM "user"
+                FROM "users"
                 ORDER BY "role", "username";
         '''
 
@@ -17,7 +17,7 @@ class UserRepository:
     def find_by_id(user_id):
         query = '''
                 SELECT "id", "username", "password", "role"
-                FROM "user"
+                FROM "users"
                 WHERE "id" = ?;
         '''
         args = (user_id,)
@@ -28,7 +28,7 @@ class UserRepository:
     def find_by_username(username):
         query = '''
                 SELECT "id", "username", "password", "role"
-                FROM "user"
+                FROM "users"
                 WHERE "username" = ?;
         '''
         args = (username,)
@@ -39,7 +39,7 @@ class UserRepository:
     def save(user):
         if user.user_id is None:
             query = '''
-                    INSERT INTO "user"
+                    INSERT INTO "users"
                         ("username", "password", "role")
                     VALUES(?, ?, ?);
             '''
@@ -47,7 +47,7 @@ class UserRepository:
             user.user_id = execute(query, args)
         else:
             query = '''
-                    UPDATE "user"
+                    UPDATE "users"
                     SET "username" = ?,
                         "password" = ?,
                         "role" = ?
@@ -61,7 +61,7 @@ class UserRepository:
     @staticmethod
     def delete_by_id(user_id):
         query = '''
-                DELETE FROM "user"
+                DELETE FROM "users"
                 WHERE "id" = ?;
         '''
         args = (user_id,)

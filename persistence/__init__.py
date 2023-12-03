@@ -14,7 +14,7 @@ def init_app(app):
     global __folder, __filename, __path
 
     __folder = app.config.get('DATA_FOLDER') or app.instance_path
-    __filename = app.config.get('DATA_FILENAME') or 'app.sqlite'
+    __filename = app.config.get('DATA_FILENAME') or 'cookbook.sqlite'
     __path = os.path.join(__folder, __filename)
 
     app.cli.add_command(__install_command)
@@ -77,7 +77,7 @@ def reset_admin():
 def __reset_admin(db):
     query = '''
             SELECT "id"
-            FROM "user"
+            FROM "users"
             WHERE "username" = 'admin';
     '''
 
@@ -86,7 +86,7 @@ def __reset_admin(db):
 
     if user_id:
         query = '''
-                UPDATE "user"
+                UPDATE "users"
                 SET "username" = ?,
                     "password" = ?,
                     "role"     = ?
@@ -95,7 +95,7 @@ def __reset_admin(db):
         args = ('admin', digest, 'admin', user_id)
     else:
         query = '''
-                INSERT INTO "user"
+                INSERT INTO "users"
                     ("username", "password", "role")
                 VALUES (?, ?, ?);
         '''

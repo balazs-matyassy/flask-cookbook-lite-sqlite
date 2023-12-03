@@ -1,7 +1,7 @@
-DROP TABLE IF EXISTS "recipe";
-DROP TABLE IF EXISTS "user";
+DROP TABLE IF EXISTS "recipes";
+DROP TABLE IF EXISTS "users";
 
-CREATE TABLE "user"
+CREATE TABLE "users"
 (
     "id"       INTEGER PRIMARY KEY AUTOINCREMENT,
     "username" TEXT UNIQUE NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE "user"
     "role"     TEXT        NOT NULL
 );
 
-CREATE TABLE "recipe"
+CREATE TABLE "recipes"
 (
     "id"          INTEGER PRIMARY KEY AUTOINCREMENT,
     "category"    TEXT    NOT NULL,

@@ -7,7 +7,7 @@ class RecipeRepository:
     def find_all():
         query = '''
                 SELECT "id", "category", "name", "description", "difficulty"
-                FROM "recipe"
+                FROM "recipes"
                 ORDER BY "category", "name";
         '''
 
@@ -17,7 +17,7 @@ class RecipeRepository:
     def find_by_id(recipe_id):
         query = '''
                 SELECT "id", "category", "name", "description", "difficulty"
-                FROM "recipe"
+                FROM "recipes"
                 WHERE "id" = ?;
         '''
         args = (recipe_id,)
@@ -28,7 +28,7 @@ class RecipeRepository:
     def find_by_name(name):
         query = '''
                 SELECT "id", "category", "name", "description", "difficulty"
-                FROM "recipe"
+                FROM "recipes"
                 WHERE "name" LIKE ?
                 ORDER BY "category", "name";
         '''
@@ -40,7 +40,7 @@ class RecipeRepository:
     def save(recipe):
         if recipe.recipe_id is None:
             query = '''
-                    INSERT INTO "recipe"
+                    INSERT INTO "recipes"
                         ("category", "name", "description", "difficulty")
                     VALUES(?, ?, ?, ?);
             '''
@@ -53,7 +53,7 @@ class RecipeRepository:
             recipe.recipe_id = execute(query, args)
         else:
             query = '''
-                    UPDATE "recipe"
+                    UPDATE "recipes"
                     SET "category" = ?,
                         "name" = ?,
                         "description" = ?,
@@ -74,7 +74,7 @@ class RecipeRepository:
     @staticmethod
     def delete_by_id(recipe_id):
         query = '''
-                DELETE FROM "recipe"
+                DELETE FROM "recipes"
                 WHERE "id" = ?;
         '''
         args = (recipe_id,)
