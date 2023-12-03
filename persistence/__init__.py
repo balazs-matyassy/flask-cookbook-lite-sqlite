@@ -17,79 +17,13 @@ def init_app(app):
     __filename = app.config.get('DATA_FILENAME') or 'app.sqlite'
     __path = os.path.join(__folder, __filename)
 
-    app.before_request(__connect)
     app.cli.add_command(__install_command)
     app.cli.add_command(__reset_admin_command)
-    app.teardown_appcontext(__disconnect)
+    app.before_request(__on_before_request)
+    app.teardown_appcontext(__on_teardown_appcontext)
 
 
-@click.command('install')
-def __install_command():
-    __install()
-    __reset_admin()
-
-    click.echo('Application installation successful.')
-
-
-@click.command('reset-admin')
-def __reset_admin_command():
-    __reset_admin()
-
-    click.echo('Admin reset successful.')
-
-
-def __install():
-    os.makedirs(__folder, exist_ok=True)
-
-    with __get_connection() as db:
-        with current_app.open_resource('schema.sql') as file:
-            db.executescript(file.read().decode('utf8'))
-            db.commit()
-
-
-def __reset_admin():
-    with __get_connection() as db:
-        query = '''
-                    SELECT "id", "username", "password", "role"
-                        FROM "user"
-                        WHERE username = 'admin';
-                '''
-        user = db.execute(query).fetchone()
-
-        digest = generate_password_hash('Admin123.')
-
-        if user:
-            query = '''
-                        UPDATE "user" SET
-                                "username" = ?,
-                                "password" = ?,
-                                "role" = ?
-                            WHERE "id" = ?;
-                    '''
-            db.execute(query, ('admin', digest, 'admin', user['id']))
-        else:
-            query = '''
-                        INSERT INTO "user" ("username", "password", "role")
-                            VALUES(?, ?, ?);
-                    '''
-            db.execute(query, ('admin', digest, 'admin'))
-
-        db.commit()
-
-
-def __connect():
-    if 'db' not in g:
-        g.db = __get_connection()
-
-
-def __disconnect(e):
-    db = g.pop('db', None)
-
-    if db:
-        db.close()
-
-
-def __get_connection():
+def get_connection():
     def dict_factory(cursor, row):
         fields = [column[0] for column in cursor.description]
         return {key: value for key, value in zip(fields, row)}
@@ -101,6 +35,95 @@ def __get_connection():
     db.row_factory = dict_factory
 
     return db
+
+
+def execute(query, args=(), db=None):
+    db = db or g.db
+
+    lastrowid = db.execute(query, args).lastrowid
+    db.commit()
+
+    return lastrowid
+
+
+def fetchone(query, args=(), db=None):
+    db = db or g.db
+
+    return db.execute(query, args).fetchone()
+
+
+def fetchall(query, args=(), db=None):
+    db = db or g.db
+
+    return db.execute(query, args).fetchall()
+
+
+def install():
+    os.makedirs(__folder, exist_ok=True)
+
+    with get_connection() as db:
+        with current_app.open_resource('schema.sql') as file:
+            db.executescript(file.read().decode('utf8'))
+            db.commit()
+
+        __reset_admin(db)
+
+
+def reset_admin():
+    with get_connection() as db:
+        __reset_admin(db)
+
+
+def __reset_admin(db):
+    query = '''
+            SELECT "id"
+            FROM "user"
+            WHERE "username" = 'admin';
+    '''
+
+    user_id = (fetchone(query, db=db) or {'id': None})['id']
+    digest = generate_password_hash('Admin123.')
+
+    if user_id:
+        query = '''
+                UPDATE "user"
+                SET "username" = ?,
+                    "password" = ?,
+                    "role"     = ?
+                WHERE "id" = ?;
+        '''
+        args = ('admin', digest, 'admin', user_id)
+    else:
+        query = '''
+                INSERT INTO "user"
+                    ("username", "password", "role")
+                VALUES (?, ?, ?);
+        '''
+        args = ('admin', digest, 'admin')
+
+    execute(query, args, db=db)
+
+
+@click.command('install')
+def __install_command():
+    install()
+    click.echo('Application installation successful.')
+
+
+@click.command('reset-admin')
+def __reset_admin_command():
+    reset_admin()
+    click.echo('Admin reset successful.')
+
+
+def __on_before_request():
+    if 'db' not in g:
+        g.db = get_connection()
+
+
+def __on_teardown_appcontext(e):
+    if 'db' in g:
+        g.pop('db').close()
 
 
 from persistence.model.user import User
