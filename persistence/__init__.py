@@ -41,28 +41,14 @@ def __reset_admin_command():
 def __install():
     os.makedirs(__folder, exist_ok=True)
 
-    db = sqlite3.connect(
-        __path,
-        detect_types=sqlite3.PARSE_DECLTYPES
-    )
-
-    with db:
-        db.row_factory = __dict_factory
-
+    with __get_connection() as db:
         with current_app.open_resource('schema.sql') as file:
             db.executescript(file.read().decode('utf8'))
             db.commit()
 
 
 def __reset_admin():
-    db = sqlite3.connect(
-        __path,
-        detect_types=sqlite3.PARSE_DECLTYPES
-    )
-
-    with db:
-        db.row_factory = __dict_factory
-
+    with __get_connection() as db:
         query = '''
                     SELECT "id", "username", "password", "role"
                         FROM "user"
@@ -71,7 +57,6 @@ def __reset_admin():
         user = db.execute(query).fetchone()
 
         digest = generate_password_hash('Admin123.')
-        print(digest)
 
         if user:
             query = '''
@@ -94,11 +79,7 @@ def __reset_admin():
 
 def __connect():
     if 'db' not in g:
-        g.db = sqlite3.connect(
-            __path,
-            detect_types=sqlite3.PARSE_DECLTYPES
-        )
-        g.db.row_factory = __dict_factory
+        g.db = __get_connection()
 
 
 def __disconnect(e):
@@ -108,9 +89,18 @@ def __disconnect(e):
         db.close()
 
 
-def __dict_factory(cursor, row):
-    fields = [column[0] for column in cursor.description]
-    return {key: value for key, value in zip(fields, row)}
+def __get_connection():
+    def dict_factory(cursor, row):
+        fields = [column[0] for column in cursor.description]
+        return {key: value for key, value in zip(fields, row)}
+
+    db = sqlite3.connect(
+        __path,
+        detect_types=sqlite3.PARSE_DECLTYPES
+    )
+    db.row_factory = dict_factory
+
+    return db
 
 
 from persistence.model.user import User
