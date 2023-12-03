@@ -71,6 +71,7 @@ def __reset_admin():
         user = db.execute(query).fetchone()
 
         digest = generate_password_hash('Admin123.')
+        print(digest)
 
         if user:
             query = '''

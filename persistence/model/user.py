@@ -64,7 +64,11 @@ class User:
         if data is None:
             return None
 
-        user = User(user_id=data['id'])
-        user.update(data)
+        user = User(
+            user_id=data['id'],
+            username=data['username'],
+            digest=data['password'],
+            role=data['role']
+        )
 
         return user
